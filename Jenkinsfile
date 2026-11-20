@@ -6,6 +6,7 @@ pipeline {
         // TODO: investigar e configurar a alternativa com webhook.
         // githubPush()
     }
+    environment { APP_IMAGE = "classroom-app:${BUILD_NUMBER}" }
     stages {
         stage('Checkout') {
             steps {
@@ -32,6 +33,14 @@ pipeline {
                         classroom-bandit:local -r app --exit-zero
                 '''
             }
+        }
+        stage('Build application image') {
+            steps { sh 'docker build -t "$APP_IMAGE" .' }
+        }
+    }
+    post {
+        always {
+            sh 'docker image rm "$APP_IMAGE" 2>/dev/null || true'
         }
     }
 }
