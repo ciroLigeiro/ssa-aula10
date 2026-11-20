@@ -9,6 +9,8 @@ services:
   docker:
     image: docker:28-dind
     privileged: true
+    ports:
+      - "127.0.0.1:8000:8000"
     environment:
       DOCKER_TLS_CERTDIR: /certs
     volumes:
