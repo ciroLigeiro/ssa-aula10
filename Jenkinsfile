@@ -48,7 +48,7 @@ pipeline {
                 sh '''
                     docker run --rm -v "$WORKSPACE:/src" -w /src \
                         aquasec/trivy:0.58.2 image --input app-image.tar \
-                        --scanners vuln --exit-code 0
+                        --scanners vuln --exit-code 1
                 '''
             }
             post {
