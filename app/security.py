@@ -19,6 +19,7 @@ def find_works(owner):
             "INSERT INTO works VALUES (?, ?)",
             [("Alice", "Alice's work"), ("Bruno", "Bruno's work")],
         )
-        query = f"SELECT owner, title FROM works WHERE owner = '{owner}'"
-        rows = connection.execute(query).fetchall()
+        rows = connection.execute(
+            "SELECT owner, title FROM works WHERE owner = ?", (owner,)
+        ).fetchall()
     return [{"owner": row[0], "title": row[1]} for row in rows]
