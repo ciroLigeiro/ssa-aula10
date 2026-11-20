@@ -35,7 +35,7 @@ pipeline {
                 sh 'docker build -f ci/Dockerfile.bandit -t classroom-bandit:local .'
                 sh '''
                     docker run --rm -v "$WORKSPACE:/src" \
-                        classroom-bandit:local -r app --exit-zero
+                        classroom-bandit:local -r app
                 '''
             }
         }
