@@ -74,9 +74,28 @@ pipeline {
                 '''
             }
         }
+        stage('DAST - ZAP Baseline') {
+            steps {
+                sh 'mkdir -p reports/zap; rm -f reports/zap/*; chmod 777 reports/zap'
+                script {
+                    int status = sh(returnStatus: true, script: '''
+                        docker run --rm --network "$LAB_NETWORK" \
+                            -v "$WORKSPACE/reports/zap:/zap/wrk:rw" \
+                            ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
+                            -t "http://$APP_CONTAINER:8000" -m 1 \
+                            -r zap.html -J zap.json
+                    ''')
+                    if (status < 0 || status > 2) {
+                        error("ZAP execution failed with exit code ${status}")
+                    }
+                    sh 'test -s reports/zap/zap.json'
+                }
+            }
+        }
     }
     post {
         always {
+            archiveArtifacts artifacts: 'reports/zap/*', allowEmptyArchive: true
             sh 'docker logs "$APP_CONTAINER" 2>/dev/null || true'
             sh 'docker rm -f "$APP_CONTAINER" 2>/dev/null || true'
             sh 'docker network rm "$LAB_NETWORK" 2>/dev/null || true'
