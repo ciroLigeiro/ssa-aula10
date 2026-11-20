@@ -6,7 +6,11 @@ pipeline {
         // TODO: investigar e configurar a alternativa com webhook.
         // githubPush()
     }
-    environment { APP_IMAGE = "classroom-app:${BUILD_NUMBER}" }
+    environment {
+        APP_IMAGE = "classroom-app:${BUILD_NUMBER}"
+        APP_CONTAINER = "classroom-app-${BUILD_NUMBER}"
+        LAB_NETWORK = "classroom-net-${BUILD_NUMBER}"
+    }
     stages {
         stage('Checkout') {
             steps {
@@ -50,9 +54,32 @@ pipeline {
                 always { sh 'rm -f app-image.tar' }
             }
         }
+        stage('Start application') {
+            steps {
+                sh '''
+                    docker network create "$LAB_NETWORK"
+                    docker run -d --name "$APP_CONTAINER" --network "$LAB_NETWORK" "$APP_IMAGE"
+                    ready=0
+                    for attempt in $(seq 1 30); do
+                        if docker exec "$APP_CONTAINER" python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)"; then
+                            ready=1
+                            break
+                        fi
+                        sleep 2
+                    done
+                    if [ "$ready" -ne 1 ]; then
+                        docker logs "$APP_CONTAINER"
+                        exit 1
+                    fi
+                '''
+            }
+        }
     }
     post {
         always {
+            sh 'docker logs "$APP_CONTAINER" 2>/dev/null || true'
+            sh 'docker rm -f "$APP_CONTAINER" 2>/dev/null || true'
+            sh 'docker network rm "$LAB_NETWORK" 2>/dev/null || true'
             sh 'docker image rm "$APP_IMAGE" 2>/dev/null || true'
         }
     }
