@@ -1,6 +1,11 @@
 pipeline {
     agent { node { label ''; customWorkspace '/workspace/devsecops-lab' } }
     options { skipDefaultCheckout(true); disableConcurrentBuilds() }
+    triggers {
+        pollSCM('H/2 * * * *')
+        // TODO: investigar e configurar a alternativa com webhook.
+        // githubPush()
+    }
     stages {
         stage('Checkout') {
             steps {
